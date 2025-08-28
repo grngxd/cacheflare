@@ -2,11 +2,11 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 const app = new Hono()
-const ver = "0.1.3"
+const ver = "0.1.4"
 
 app.use('*', cors())
 
-const proxyWithCache = async (c: any, next?: any) => {
+const pcache = async (c: any, next?: any) => {
   const protocol = c.req.param('protocol')
   const host = c.req.param('host')
 
@@ -97,6 +97,12 @@ app.get("/", async (c) => {
       <head>
         <meta charset="utf-8" />
         <title>cacheflare v${ver}</title>
+        <meta name="description" content="a tiny cloudflare worker that proxies and caches http(s) api responses." />
+        <meta property="og:title" content="cacheflare v${ver}" />
+        <meta property="og:description" content="a tiny cloudflare worker that proxies and caches http(s) api responses." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="${c.req.url}" />
+        <meta name="twitter:card" content="summary_large_image" />
         <style>
           body { font-family: system-ui, sans-serif; margin: 2em; background: #fafbfc; color: #222; }
           code, pre { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
@@ -152,7 +158,7 @@ app.get("/", async (c) => {
   `)
 })
 
-app.use('/:protocol/:host/*', proxyWithCache)
-app.use('/:protocol/:host', proxyWithCache)
+app.use('/:protocol/:host/*', pcache)
+app.use('/:protocol/:host', pcache)
 
 export default app
