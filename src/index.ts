@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 const app = new Hono()
+const ver = "0.1.1"
 
 app.use('*', cors())
 
@@ -73,6 +74,66 @@ async function proxyWithCache(c: any, targetUrl: string) {
 
   return res
 }
+
+app.get("/", async (c) => {
+  const now = new Date().toISOString()
+  
+  return c.html(`
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>cacheflare v${ver}</title>
+        <style>
+          body { font-family: system-ui, sans-serif; margin: 2em; background: #fafbfc; color: #222; }
+          code, pre { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+          h1 { font-size: 2em; margin-bottom: 0.2em; }
+          .ver { color: #888; font-size: 0.9em; }
+          .section { margin-bottom: 1.5em; }
+        </style>
+      </head>
+      <body>
+        <h1>cacheflare <span class="ver">v${ver}</span></h1>
+        <div class="section">
+          <b>a tiny cloudflare worker that proxies and caches http(s) api responses.</b><br>
+          <span style="color:#888">powered by hono, deployed on cloudflare edge</span>
+        </div>
+        <div class="section">
+          <b>live endpoint:</b><br>
+          <code>https://cacheflare.grng.workers.dev</code>
+        </div>
+        <div class="section">
+          <b>usage:</b><br>
+          <code>/https/gettimeapi.dev/v1/time</code> proxies to <code>https://gettimeapi.dev/v1/time</code><br>
+          <br>
+          <b>query params:</b>
+          <ul>
+            <li><code>ttl</code>: cache seconds (default 300, max 86400)</li>
+            <li><code>respect=1</code>: respect origin cache-control</li>
+            <li><code>no-cache=1</code>: bypass cache</li>
+          </ul>
+          <b>headers:</b>
+          <ul>
+            <li><code>cf-cache-bypass: 1</code>: bypass cache</li>
+          </ul>
+          <b>response header:</b>
+          <ul>
+            <li><code>x-cache: hit|miss</code> (shows cache status)</li>
+          </ul>
+        </div>
+        <div class="section">
+          <b>example:</b><br>
+          <code><a href="/https/gettimeapi.dev/v1/time" target="_blank">/https/gettimeapi.dev/v1/time</a></code>
+        </div>
+        <div class="section" style="color:#888">
+          <b>current time:</b> ${now}
+        </div>
+        <div class="section" style="color:#bbb;font-size:0.9em;">
+          <b>source:</b> <a href="https://github.com/grngxd/cacheflare" target="_blank">github.com/grngxd/cacheflare</a>
+        </div>
+      </body>
+    </html>
+  `)
+})
 
 app.get('/:protocol/:host/*', async (c) => {
   const protocol = c.req.param('protocol')
