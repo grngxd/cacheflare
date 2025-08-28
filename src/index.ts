@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 const app = new Hono()
-const ver = "0.1.1"
+const ver = "0.1.2"
 
 app.use('*', cors())
 
@@ -99,12 +99,15 @@ app.get("/", async (c) => {
         </div>
         <div class="section">
           <b>live endpoint:</b><br>
-          <code>https://cacheflare.grng.workers.dev</code>
+          <code>${c.req.url}</code>
         </div>
         <div class="section">
           <b>usage:</b><br>
-          <code>/https/gettimeapi.dev/v1/time</code> proxies to <code>https://gettimeapi.dev/v1/time</code><br>
+          <code>${c.req.url}https/gettimeapi.dev/v1/time</code> proxies to <code>https://gettimeapi.dev/v1/time</code> & caches for 5 minutes<br>
+          try it out!
           <br>
+          <br>
+
           <b>query params:</b>
           <ul>
             <li><code>ttl</code>: cache seconds (default 300, max 86400)</li>
