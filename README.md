@@ -28,7 +28,7 @@ behavior:
 - GET/HEAD are cached by default for a configurable ttl (default 300s)
 - authorization header disables caching
 - query string is part of the cache key (different queries → different cache entries)
-- response header `x-cache: HIT|MISS` indicates cache status
+- response header `x-cacheflare: HIT|MISS` indicates cache status
 
 ## quick start (local)
 
@@ -74,5 +74,5 @@ header control:
 behavior notes:
 - when not respecting origin (`respect` absent), `set-cookie` is stripped to keep responses cacheable
 - authorization header present → response is not cached
-- `x-cache` header shows `hit` on cache hit and `miss` on fetch/store
+- `x-cacheflare` header shows `hit` on cache hit and `miss` on fetch/store
 - head requests are supported (no body)

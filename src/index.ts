@@ -2,11 +2,25 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
 const app = new Hono()
-const ver = "0.1.2"
+const ver = "0.1.3"
 
 app.use('*', cors())
 
-async function proxyWithCache(c: any, targetUrl: string) {
+const proxyWithCache = async (c: any, next?: any) => {
+  const protocol = c.req.param('protocol')
+  const host = c.req.param('host')
+
+  if (protocol !== 'http' && protocol !== 'https') {
+    return c.text('invalid protocol. Use "http" or "https"', 400)
+  }
+
+  const pathname = c.req.path
+  const rest = pathname.split('/').slice(3).join('/')
+
+  const qsIndex = c.req.url.indexOf('?')
+  const query = qsIndex !== -1 ? c.req.url.slice(qsIndex) : ''
+  const targetUrl = (rest ? `${protocol}://${host}/${rest}` : `${protocol}://${host}`) + query
+
   const method = c.req.method
   const hasAuth = !!c.req.header('authorization')
   const cache = (caches as unknown as { default: Cache }).default
@@ -20,7 +34,7 @@ async function proxyWithCache(c: any, targetUrl: string) {
     const hit = await cache.match(cacheKey)
     if (hit) {
       const h = new Headers(hit.headers)
-      h.set('X-Cache', 'HIT')
+      h.set('X-Cacheflare', 'HIT')
       return new Response(method === 'HEAD' ? null : hit.body, {
         status: hit.status,
         statusText: hit.statusText,
@@ -58,7 +72,7 @@ async function proxyWithCache(c: any, targetUrl: string) {
     statusText: originRes.statusText,
     headers,
   })
-  res.headers.set('X-Cache', 'MISS')
+  res.headers.set('X-Cacheflare', 'MISS')
 
   if (!bypass && !hasAuth && (method === 'GET' || method === 'HEAD') && originRes.ok) {
     try {
@@ -120,7 +134,7 @@ app.get("/", async (c) => {
           </ul>
           <b>response header:</b>
           <ul>
-            <li><code>x-cache: hit|miss</code> (shows cache status)</li>
+            <li><code>x-cacheflare: hit|miss</code> (shows cache status)</li>
           </ul>
         </div>
         <div class="section">
@@ -138,33 +152,7 @@ app.get("/", async (c) => {
   `)
 })
 
-app.get('/:protocol/:host/*', async (c) => {
-  const protocol = c.req.param('protocol')
-  const host = c.req.param('host')
-
-  if (protocol !== 'http' && protocol !== 'https') {
-    return c.text('Invalid protocol. Use http or https.', 400)
-  }
-
-  const pathname = c.req.path
-  const rest = pathname.split('/').slice(3).join('/')
-
-  const qsIndex = c.req.url.indexOf('?')
-  const query = qsIndex !== -1 ? c.req.url.slice(qsIndex) : ''
-  const targetUrl = (rest ? `${protocol}://${host}/${rest}` : `${protocol}://${host}`) + query
-  return proxyWithCache(c, targetUrl)
-})
-
-app.get('/:protocol/:host', async (c) => {
-  const protocol = c.req.param('protocol')
-  const host = c.req.param('host')
-  if (protocol !== 'http' && protocol !== 'https') {
-    return c.text('Invalid protocol. Use http or https.', 400)
-  }
-  const qsIndex = c.req.url.indexOf('?')
-  const query = qsIndex !== -1 ? c.req.url.slice(qsIndex) : ''
-  const targetUrl = `${protocol}://${host}` + query
-  return proxyWithCache(c, targetUrl)
-})
+app.use('/:protocol/:host/*', proxyWithCache)
+app.use('/:protocol/:host', proxyWithCache)
 
 export default app
